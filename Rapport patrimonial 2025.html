@@ -1,0 +1,498 @@
+import React, { useState, useEffect } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
+import { TrendingUp, TrendingDown, Home, CreditCard, Wallet, Target, AlertCircle, CheckCircle, User, Download, Save } from 'lucide-react';
+
+const WealthReport = () => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [animationComplete, setAnimationComplete] = useState(false);
+  const [clientInput, setClientInput] = useState({
+    name: "M. & Mme Dupont",
+    patrimoineBrut: 450000,
+    dettes: 180000,
+    revenus: 85000,
+    charges: 45000,
+    liquidites: 45000,
+    immobilier: 320000,
+    placements: 85000,
+    age: 42,
+    objectifPatrimoine: 600000
+  });
+
+  // Calcul du patrimoine net basé sur les données saisies
+  const clientData = {
+    ...clientInput,
+    patrimoineNet: clientInput.patrimoineBrut - clientInput.dettes,
+    tauxEndettement: clientInput.dettes / clientInput.revenus
+  };
+
+  // Calculs des ratios
+  const ratios = {
+    tauxEndettement: (clientData.dettes / clientData.revenus * 100).toFixed(1),
+    ratioPatrimoine: (clientData.patrimoineNet / clientData.revenus).toFixed(1),
+    tauxEpargne: ((clientData.revenus - clientData.charges) / clientData.revenus * 100).toFixed(1),
+    liquiditesMois: (clientData.liquidites / (clientData.charges / 12)).toFixed(1)
+  };
+
+  // Données pour les graphiques
+  const patrimoineData = [
+    { name: 'Immobilier', value: clientData.immobilier, color: '#3B82F6' },
+    { name: 'Placements', value: clientData.placements, color: '#10B981' },
+    { name: 'Liquidités', value: clientData.liquidites, color: '#F59E0B' }
+  ];
+
+  const detteData = [
+    { name: 'Immobilier', value: 150000, color: '#EF4444' },
+    { name: 'Consommation', value: 30000, color: '#F97316' }
+  ];
+
+  const evolutionData = [
+    { annee: '2020', patrimoine: 180000 },
+    { annee: '2021', patrimoine: 210000 },
+    { annee: '2022', patrimoine: 240000 },
+    { annee: '2023', patrimoine: 260000 },
+    { annee: '2024', patrimoine: 270000 },
+    { annee: '2025', patrimoine: 300000, projection: true },
+    { annee: '2026', patrimoine: 340000, projection: true },
+    { annee: '2027', patrimoine: 380000, projection: true }
+  ];
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimationComplete(true), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const getProfileInvestisseur = () => {
+    if (ratios.tauxEndettement < 25 && ratios.tauxEpargne > 20) {
+      return { type: 'Prudent', color: 'text-green-600', icon: CheckCircle };
+    } else if (ratios.tauxEndettement < 35 && ratios.tauxEpargne > 15) {
+      return { type: 'Équilibré', color: 'text-blue-600', icon: Target };
+    } else {
+      return { type: 'Dynamique', color: 'text-orange-600', icon: AlertCircle };
+    }
+  };
+
+  const profil = getProfileInvestisseur();
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 0
+    }).format(value);
+  };
+
+  const handleInputChange = (field, value) => {
+    setClientInput(prev => ({
+      ...prev,
+      [field]: parseFloat(value) || 0
+    }));
+  };
+
+  const downloadPDF = () => {
+    alert('Fonctionnalité de téléchargement PDF simulée. En production, utilisez html2pdf.js');
+  };
+
+  const saveData = () => {
+    alert('Données sauvegardées avec succès !');
+  };
+
+  const AnimatedCard = ({ children, delay = 0 }) => (
+    <div 
+      className={`bg-white rounded-xl shadow-lg p-6 transform transition-all duration-1000 ${
+        animationComplete ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+      }`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  );
+
+  const TabButton = ({ id, label, icon: Icon }) => (
+    <button
+      onClick={() => setActiveTab(id)}
+      className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+        activeTab === id
+          ? 'bg-blue-600 text-white shadow-lg transform scale-105'
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+      }`}
+    >
+      <Icon size={20} />
+      <span>{label}</span>
+    </button>
+  );
+
+  return (
+    <div id="rapport-content" className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* En-tête */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            Rapport Patrimonial
+          </h1>
+          <p className="text-xl text-gray-600">{clientData.name}</p>
+          <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-4 rounded-full"></div>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-center space-x-4 mb-8 flex-wrap">
+          <TabButton id="input" label="Saisie Client" icon={User} />
+          <TabButton id="overview" label="Vue d'ensemble" icon={Home} />
+          <TabButton id="ratios" label="Ratios" icon={TrendingUp} />
+          <TabButton id="projections" label="Projections" icon={Target} />
+          <button
+            onClick={downloadPDF}
+            className="flex items-center space-x-2 px-6 py-3 rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 transition-all duration-300"
+          >
+            <Download size={20} />
+            <span>Télécharger PDF</span>
+          </button>
+        </div>
+
+        {/* Contenu des onglets */}
+        {activeTab === 'input' && (
+          <div className="space-y-6">
+            <AnimatedCard>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-semibold text-gray-800">Informations Client</h3>
+                <button
+                  onClick={saveData}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Save size={16} />
+                  <span>Sauvegarder</span>
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nom du client</label>
+                  <input
+                    type="text"
+                    value={clientInput.name}
+                    onChange={(e) => setClientInput(prev => ({...prev, name: e.target.value}))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Âge</label>
+                  <input
+                    type="number"
+                    value={clientInput.age}
+                    onChange={(e) => handleInputChange('age', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Revenus annuels (€)</label>
+                  <input
+                    type="number"
+                    value={clientInput.revenus}
+                    onChange={(e) => handleInputChange('revenus', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Charges annuelles (€)</label>
+                  <input
+                    type="number"
+                    value={clientInput.charges}
+                    onChange={(e) => handleInputChange('charges', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Valeur immobilier (€)</label>
+                  <input
+                    type="number"
+                    value={clientInput.immobilier}
+                    onChange={(e) => handleInputChange('immobilier', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Placements financiers (€)</label>
+                  <input
+                    type="number"
+                    value={clientInput.placements}
+                    onChange={(e) => handleInputChange('placements', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Liquidités (€)</label>
+                  <input
+                    type="number"
+                    value={clientInput.liquidites}
+                    onChange={(e) => handleInputChange('liquidites', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Total des dettes (€)</label>
+                  <input
+                    type="number"
+                    value={clientInput.dettes}
+                    onChange={(e) => handleInputChange('dettes', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Objectif patrimonial (€)</label>
+                  <input
+                    type="number"
+                    value={clientInput.objectifPatrimoine}
+                    onChange={(e) => handleInputChange('objectifPatrimoine', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-semibold text-blue-800 mb-2">Calculs automatiques :</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Patrimoine brut:</span>
+                    <p className="font-semibold">{formatCurrency(clientInput.immobilier + clientInput.placements + clientInput.liquidites)}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Patrimoine net:</span>
+                    <p className="font-semibold">{formatCurrency(clientData.patrimoineNet)}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Taux d'endettement:</span>
+                    <p className="font-semibold">{(clientData.tauxEndettement * 100).toFixed(1)}%</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Capacité d'épargne:</span>
+                    <p className="font-semibold">{formatCurrency(clientInput.revenus - clientInput.charges)}</p>
+                  </div>
+                </div>
+              </div>
+            </AnimatedCard>
+          </div>
+        )}
+
+        {/* Vue d'ensemble */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Indicateurs clés */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <AnimatedCard delay={100}>
+                <div className="text-center">
+                  <Wallet className="w-12 h-12 text-blue-600 mx-auto mb-3" />
+                  <h3 className="text-lg font-semibold text-gray-700">Patrimoine Net</h3>
+                  <p className="text-3xl font-bold text-blue-600">{formatCurrency(clientData.patrimoineNet)}</p>
+                </div>
+              </AnimatedCard>
+
+              <AnimatedCard delay={200}>
+                <div className="text-center">
+                  <CreditCard className="w-12 h-12 text-red-600 mx-auto mb-3" />
+                  <h3 className="text-lg font-semibold text-gray-700">Taux d'endettement</h3>
+                  <p className="text-3xl font-bold text-red-600">{ratios.tauxEndettement}%</p>
+                </div>
+              </AnimatedCard>
+
+              <AnimatedCard delay={300}>
+                <div className="text-center">
+                  <TrendingUp className="w-12 h-12 text-green-600 mx-auto mb-3" />
+                  <h3 className="text-lg font-semibold text-gray-700">Taux d'épargne</h3>
+                  <p className="text-3xl font-bold text-green-600">{ratios.tauxEpargne}%</p>
+                </div>
+              </AnimatedCard>
+
+              <AnimatedCard delay={400}>
+                <div className="text-center">
+                  <profil.icon className={`w-12 h-12 ${profil.color} mx-auto mb-3`} />
+                  <h3 className="text-lg font-semibold text-gray-700">Profil Investisseur</h3>
+                  <p className={`text-2xl font-bold ${profil.color}`}>{profil.type}</p>
+                </div>
+              </AnimatedCard>
+            </div>
+
+            {/* Graphiques principaux */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AnimatedCard delay={500}>
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Répartition du Patrimoine</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={patrimoineData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={120}
+                      paddingAngle={5}
+                      dataKey="value"
+                      animationBegin={500}
+                      animationDuration={1500}
+                    >
+                      {patrimoineData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(value)} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex justify-center space-x-6 mt-4">
+                  {patrimoineData.map((item, index) => (
+                    <div key={index} className="flex items-center">
+                      <div className={`w-4 h-4 rounded-full mr-2`} style={{backgroundColor: item.color}}></div>
+                      <span className="text-sm text-gray-600">{item.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </AnimatedCard>
+
+              <AnimatedCard delay={600}>
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Structure des Dettes</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={detteData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis tickFormatter={(value) => `${value/1000}k€`} />
+                    <Tooltip formatter={(value) => formatCurrency(value)} />
+                    <Bar dataKey="value" fill="#EF4444" animationBegin={600} animationDuration={1500} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </AnimatedCard>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'ratios' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <AnimatedCard>
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Analyse des Ratios Financiers</h3>
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium">Taux d'endettement</span>
+                      <span className="text-lg font-bold">{ratios.tauxEndettement}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-red-500 h-2 rounded-full transition-all duration-2000"
+                        style={{ width: `${Math.min(ratios.tauxEndettement, 100)}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-2">
+                      {ratios.tauxEndettement < 35 ? "✅ Ratio sain" : "⚠️ Attention à surveiller"}
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium">Ratio patrimoine/revenus</span>
+                      <span className="text-lg font-bold">{ratios.ratioPatrimoine}x</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-500 h-2 rounded-full transition-all duration-2000"
+                        style={{ width: `${Math.min(ratios.ratioPatrimoine * 10, 100)}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-2">
+                      {ratios.ratioPatrimoine > 3 ? "✅ Bon niveau de capitalisation" : "📈 Potentiel d'amélioration"}
+                    </p>
+                  </div>
+                </div>
+              </AnimatedCard>
+
+              <AnimatedCard delay={200}>
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Recommandations</h3>
+                <div className="space-y-3">
+                  <div className="p-3 bg-green-50 border-l-4 border-green-500 rounded">
+                    <p className="text-green-800 font-medium">Forces</p>
+                    <p className="text-green-700 text-sm">Capacité d'épargne solide de {ratios.tauxEpargne}%</p>
+                  </div>
+                  <div className="p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+                    <p className="text-blue-800 font-medium">Opportunités</p>
+                    <p className="text-blue-700 text-sm">Diversification possible vers des placements financiers</p>
+                  </div>
+                  <div className="p-3 bg-orange-50 border-l-4 border-orange-500 rounded">
+                    <p className="text-orange-800 font-medium">Points d'attention</p>
+                    <p className="text-orange-700 text-sm">Surveiller l'évolution du taux d'endettement</p>
+                  </div>
+                </div>
+              </AnimatedCard>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'projections' && (
+          <div className="space-y-6">
+            <AnimatedCard>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Évolution Patrimoniale</h3>
+              <ResponsiveContainer width="100%" height={400}>
+                <AreaChart data={evolutionData}>
+                  <defs>
+                    <linearGradient id="colorPatrimoine" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="annee" />
+                  <YAxis tickFormatter={(value) => `${value/1000}k€`} />
+                  <Tooltip 
+                    formatter={(value, name) => [formatCurrency(value), name === 'patrimoine' ? 'Patrimoine' : name]}
+                    labelFormatter={(label) => `Année ${label}`}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="patrimoine"
+                    stroke="#3B82F6"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorPatrimoine)"
+                    animationBegin={300}
+                    animationDuration={2000}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </AnimatedCard>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <AnimatedCard delay={200}>
+                <h4 className="font-semibold text-gray-800 mb-3">Objectif 5 ans</h4>
+                <p className="text-2xl font-bold text-blue-600">{formatCurrency(clientData.objectifPatrimoine)}</p>
+                <p className="text-sm text-gray-600 mt-2">Croissance annuelle cible: 8%</p>
+              </AnimatedCard>
+
+              <AnimatedCard delay={300}>
+                <h4 className="font-semibold text-gray-800 mb-3">Investissement recommandé</h4>
+                <p className="text-2xl font-bold text-green-600">2 000€/mois</p>
+                <p className="text-sm text-gray-600 mt-2">Basé sur votre capacité d'épargne</p>
+              </AnimatedCard>
+
+              <AnimatedCard delay={400}>
+                <h4 className="font-semibold text-gray-800 mb-3">Horizon d'investissement</h4>
+                <p className="text-2xl font-bold text-purple-600">Long terme</p>
+                <p className="text-sm text-gray-600 mt-2">Profil adapté à votre âge</p>
+              </AnimatedCard>
+            </div>
+          </div>
+        )}
+
+        {/* Pied de page */}
+        <div className="mt-12 text-center">
+          <p className="text-gray-500 text-sm">
+            Rapport généré le {new Date().toLocaleDateString('fr-FR')} • Données confidentielles
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default WealthReport;
